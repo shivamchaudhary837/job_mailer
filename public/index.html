@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Outreach Mailer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">Job Outreach Mailer</span>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        <!-- Stepper -->
+        <div class="row mb-4">
+            <div class="col text-center">
+                <div class="btn-group w-100" role="group">
+                    <button type="button" class="btn btn-outline-primary active" id="step1-btn">1. SMTP Config</button>
+                    <button type="button" class="btn btn-outline-primary" id="step2-btn">2. Campaign Builder</button>
+                    <button type="button" class="btn btn-outline-primary" id="step3-btn">3. Review & Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: SMTP Config -->
+        <section id="step1-section" class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">SMTP Configuration</h5>
+                <form id="smtp-form">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">SMTP Host</label>
+                            <input type="text" class="form-control" id="smtp-host" value="smtp.gmail.com" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Port</label>
+                            <input type="number" class="form-control" id="smtp-port" value="465" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Username (Email)</label>
+                            <input type="email" class="form-control" id="smtp-user" placeholder="your-email@gmail.com" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">App Password</label>
+                            <input type="password" class="form-control" id="smtp-pass" aria-describedby="app-password-help" required>
+                            <div id="app-password-help" class="form-text">Generate a <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer">Google App Password</a> for your Gmail account. Requires 2-Step Verification.</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="smtp-secure" checked>
+                                <label class="form-check-label">Secure (SSL/TLS)</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">From Name</label>
+                            <input type="text" class="form-control" id="from-name" placeholder="Your Name" required>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-secondary" id="test-smtp-btn">Test Connection</button>
+                        <button type="button" class="btn btn-primary float-end" onclick="app.navTo(2)">Next: Campaign Builder</button>
+                    </div>
+                    <div class="form-text mt-2">Test Connection sends a test email to your Username (Email) address.</div>
+                    <div id="smtp-status" class="mt-3"></div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Step 2: Campaign Builder -->
+        <section id="step2-section" class="card shadow-sm d-none">
+            <div class="card-body">
+                <h5 class="card-title">Campaign Builder</h5>
+                
+                <div class="mb-4">
+                    <h6>Your Details</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label for="current-company-name" class="form-label">Current Company</label>
+                            <input type="text" class="form-control" id="current-company-name" placeholder="Your current company">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="current-role" class="form-label">Current Role</label>
+                            <input type="text" class="form-control" id="current-role" placeholder="Your current role">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="phone-number" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone-number" autocomplete="tel" placeholder="Your phone number">
+                        </div>
+                    </div>
+                    <h6>Global Template</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Subject Template</label>
+                        <input type="text" class="form-control" id="tpl-subject" value="Request for an Interview Opportunity - {{role}} at {{companyName}}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Body Template (HTML)</label>
+                        <textarea class="form-control" id="tpl-body" rows="10">Hello {{hrName}},<br><br>I hope you’re doing well.<br><br>My name is {{yourName}}, and I’m currently working at {{currentCompanyName}} as a {{currentRole}}. I have experience developing responsive and scalable web applications using React, Angular, JavaScript, TypeScript, and modern frontend technologies.<br><br>I’m interested in the {{role}} position at {{companyName}} (&lt;a href="{{jobLink}}" target="_blank" rel="noopener noreferrer"&gt;JobLink&lt;/a&gt;), as my experience closely aligns with the role’s requirements.<br><br>Could you please refer me for this opportunity? I have attached my resume for your consideration.<br><br>Thank you for your time.<br><br>Best regards,<br>{{yourName}}<br>{{phoneNumber}}</textarea>
+                        <div class="form-text">Placeholders: {{fullName}}, {{companyName}}, {{role}}, {{hrName}}, {{jobLink}}, {{yourName}}, {{currentCompanyName}}, {{currentRole}}, {{phoneNumber}}</div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="mb-4">
+                    <label for="pdf-attachment" class="form-label">PDF attachment (optional)</label>
+                    <input type="file" class="form-control" id="pdf-attachment" accept=".pdf,application/pdf" aria-describedby="attachment-help attachment-status">
+                    <div id="attachment-help" class="form-text">Attach your resume or another PDF to every email in this campaign. Maximum 2 MB.</div>
+                    <div id="attachment-status" class="form-text" role="status">No PDF selected.</div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2 d-none" id="remove-attachment-btn">Remove attachment</button>
+                </div>
+
+                <h6>Recipients</h6>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="download-excel-btn">Download Excel Template</button>
+                    <button type="button" class="btn btn-outline-success btn-sm" id="export-excel-btn">Export Recipients</button>
+                </div>
+                <label for="import-excel" class="form-label">Import Excel recipient list</label>
+                <input type="file" class="form-control mb-2" id="import-excel" accept=".xlsx,.xls" aria-describedby="excel-help excel-status">
+                <div id="excel-help" class="form-text mb-3">Download the template, fill in your recipients, then upload it here. Import replaces the current list. All rows appear below for you to check and edit before clicking Next: Review &amp; Send. Maximum 2 MB and 1,000 rows. Uses the Recipients sheet, or the first sheet.</div>
+                <div id="excel-status" class="mb-3" role="status" aria-live="polite"></div>
+                <div id="recipient-errors" class="text-danger mb-3" role="status"></div>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle" id="recipients-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Full Name</th>
+                                <th>Company</th>
+                                <th>Role</th>
+                                <th>HR Name</th>
+                                <th>Email</th>
+                                <th>Job Link</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recipients-body">
+                            <!-- Rows injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" class="btn btn-outline-success btn-sm" id="add-row-btn">+ Add Recipient</button>
+
+                <div class="mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="app.navTo(1)">Back</button>
+                    <button type="button" class="btn btn-primary float-end" onclick="app.navTo(3)">Next: Review & Send</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 3: Review & Send -->
+        <section id="step3-section" class="card shadow-sm d-none">
+            <div class="card-body">
+                <h5 class="card-title">Review & Send</h5>
+                
+                <div id="review-summary" class="mb-4 alert alert-info">
+                    <!-- Summary injected by JS -->
+                </div>
+
+                <div id="review-attachment" class="mb-3"></div>
+                <div class="card mb-4 border-info">
+                    <div class="card-header bg-info text-white">Preview (First Recipient)</div>
+                    <div class="card-body bg-white">
+                        <div class="mb-2"><strong>Subject:</strong> <span id="preview-subject"></span></div>
+                        <hr>
+                        <div id="preview-body" class="p-3 border rounded bg-light" style="min-height: 100px;"></div>
+                    </div>
+                </div>
+
+                <div class="row g-3 align-items-end mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label">Max Emails per Run</label>
+                        <input type="number" class="form-control" id="max-emails" value="10" max="20">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Delay between (ms)</label>
+                        <input type="number" class="form-control" id="delay-ms" value="15000">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-danger w-100" id="send-emails-btn">Send Emails Now</button>
+                    </div>
+                </div>
+
+                <div id="results-container" class="d-none">
+                    <h6>Sending Results</h6>
+                    <div id="send-progress-bar" class="progress mb-3" style="height: 20px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <table class="table table-sm table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Recipient</th>
+                                <th>Status</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body"></tbody>
+                    </table>
+                </div>
+
+                <div class="mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="app.navTo(2)">Back</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="vendor/xlsx.full.min.js"></script>
+    <script src="recipients-excel.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
