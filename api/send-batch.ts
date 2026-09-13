@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createVerifiedTransporter, smtpErrorMessage, sleep, SmtpConfig } from './lib/mailer';
+import { createVerifiedTransporter, smtpErrorMessage, sleep, SmtpConfig } from './_lib/mailer';
 
 interface Message {
   to: string;
@@ -33,6 +33,10 @@ export default async function handler(req: Request, res: Response) {
   }
   
   const actualDelay = Math.min(Math.max(delayMs || 0, 0), 60000); // Cap 0-60s
+  // Reserve at least two minutes of the 300-second hosting limit for SMTP work.
+  if (!Number.isFinite(actualDelay) || (messages.length - 1) * actualDelay > 180000) {
+    return res.status(400).json({ ok: false, error: 'Reduce the batch size or delay: total waiting time must not exceed 3 minutes per run.' });
+  }
 
   let attachments;
   if (attachment != null) {

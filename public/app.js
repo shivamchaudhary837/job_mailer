@@ -330,6 +330,10 @@ const app = {
         const delay = parseInt(this.dom.delayMs.value) || 15000;
         
         const toSend = rawRecipients.slice(0, limit);
+        if (limit < 1 || limit > 20 || delay < 0 || delay > 60000 || (toSend.length - 1) * delay > 180000) {
+            alert('Use 1–20 emails and a delay up to 60 seconds. Total waiting time must not exceed 3 minutes; use a smaller batch or delay.');
+            return;
+        }
         let messages;
         try {
             messages = toSend.map(r => ({

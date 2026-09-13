@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createVerifiedTransporter, smtpErrorMessage, SmtpConfig } from './lib/mailer';
+import { createVerifiedTransporter, smtpErrorMessage, SmtpConfig } from './_lib/mailer';
 
 export default async function handler(req: Request, res: Response) {
   if (req.method !== 'POST') {
