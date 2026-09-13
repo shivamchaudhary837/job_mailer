@@ -45,6 +45,9 @@ const app = {
             tplBody: document.getElementById('tpl-body'),
             recipientsBody: document.getElementById('recipients-body'),
             addRowBtn: document.getElementById('add-row-btn'),
+            importExcel: document.getElementById('import-excel'),
+            excelStatus: document.getElementById('excel-status'),
+            recipientErrors: document.getElementById('recipient-errors'),
             attachmentInput: document.getElementById('pdf-attachment'),
             attachmentStatus: document.getElementById('attachment-status'),
             removeAttachmentBtn: document.getElementById('remove-attachment-btn'),
@@ -69,6 +72,9 @@ const app = {
 
         this.dom.testSmtpBtn.onclick = () => this.testSmtp();
         this.dom.addRowBtn.onclick = () => this.addRecipientRow();
+        this.dom.importExcel.onchange = () => this.importRecipients();
+        document.getElementById('download-excel-btn').onclick = () => this.downloadRecipients(true);
+        document.getElementById('export-excel-btn').onclick = () => this.downloadRecipients(false);
         this.dom.sendEmailsBtn.onclick = () => this.sendBatch();
         this.dom.attachmentInput.onchange = () => this.selectAttachment();
         this.dom.removeAttachmentBtn.onclick = () => {
@@ -83,6 +89,7 @@ const app = {
 
     navTo(step) {
         if (step !== 1 && !this.validateSmtp()) return;
+        if (step === 3 && (this.importingExcel || !this.validateRecipients())) return;
         Object.values(this.dom.sections).forEach(s => s.classList.add('d-none'));
         Object.values(this.dom.btns).forEach(b => b.classList.remove('active'));
 
@@ -142,6 +149,52 @@ const app = {
     },
 
     // --- Step 2: Campaign ---
+    downloadRecipients(template) {
+        try {
+            recipientExcel.download(template ? [] : this.state.recipients, template ? 'recipients-template.xlsx' : 'recipients.xlsx');
+            this.dom.excelStatus.textContent = template
+                ? 'Template downloaded. Fill in the Recipients sheet, keeping the column headings.'
+                : 'Recipient list exported.';
+        } catch (err) { this.dom.excelStatus.textContent = err.message; }
+    },
+
+    async importRecipients() {
+        const file = this.dom.importExcel.files[0];
+        if (!file || this.importingExcel) return;
+        this.importingExcel = true;
+        this.dom.importExcel.disabled = true;
+        this.dom.excelStatus.textContent = 'Reading Excel file...';
+        try {
+            if (!/\.xlsx?$/i.test(file.name) || !file.size || file.size > 2 * 1024 * 1024) {
+                throw new Error('Choose an .xlsx or .xls file no larger than 2 MB.');
+            }
+            const recipients = recipientExcel.parse(await file.arrayBuffer());
+            this.state.recipients = recipients;
+            this.renderRecipients();
+            this.showRecipientIssues();
+            this.dom.excelStatus.textContent = `Imported ${recipients.length} recipients from ${file.name}. Check every row below, then click Next: Review & Send. Import does not send emails.`;
+        } catch (err) {
+            this.dom.excelStatus.textContent = `Import failed: ${err.message} Your previous list has been kept.`;
+        } finally {
+            this.importingExcel = false;
+            this.dom.importExcel.disabled = false;
+            this.dom.importExcel.value = '';
+        }
+    },
+
+    showRecipientIssues() {
+        const issues = recipientExcel.issues(this.state.recipients);
+        this.dom.recipientErrors.textContent = issues.slice(0, 10).join(' ') + (issues.length > 10 ? ` Plus ${issues.length - 10} more issues.` : '');
+        return issues;
+    },
+
+    validateRecipients() {
+        if (!this.showRecipientIssues().length) return true;
+        this.navTo(2);
+        this.dom.recipientErrors.scrollIntoView({ block: 'center' });
+        return false;
+    },
+
     selectAttachment() {
         const file = this.dom.attachmentInput.files[0];
         this.state.attachment = null;
@@ -174,7 +227,11 @@ const app = {
 
     renderRecipients() {
         this.dom.recipientsBody.innerHTML = '';
-        this.state.recipients.forEach((r, idx) => {
+        this.state.recipients.forEach((recipient, idx) => {
+            // Spreadsheet values must be text, never executable HTML.
+            const r = Object.fromEntries(Object.entries(recipient).map(([key, value]) => [key,
+                String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]))
+            ]));
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><input type="text" class="form-control form-control-sm" value="${r.fullName}" oninput="app.updateRecipient(${idx}, 'fullName', this.value)"></td>
@@ -193,6 +250,7 @@ const app = {
 
     updateRecipient(idx, field, val) {
         this.state.recipients[idx][field] = val;
+        this.showRecipientIssues();
     },
 
     addRecipientRow() {
@@ -203,6 +261,7 @@ const app = {
     removeRecipient(idx) {
         this.state.recipients.splice(idx, 1);
         this.renderRecipients();
+        this.showRecipientIssues();
     },
 
     // --- Step 3: Review ---
@@ -264,6 +323,7 @@ const app = {
 
     async sendBatch() {
         if (!this.validateSmtp()) return;
+        if (this.importingExcel || !this.validateRecipients()) return;
         const config = this.getSmtpConfig();
         const rawRecipients = this.state.recipients.filter(r => r.email);
         const limit = parseInt(this.dom.maxEmails.value) || 10;
